@@ -9,7 +9,7 @@ Cada tema vive en su propio paquete Java y se prueba con un endpoint en el naveg
 
 **Stack:** Java 17 · Spring Boot 4.1.1 · Spring AMQP · PostgreSQL · RabbitMQ 4 · Docker Compose · Prometheus y Grafana.
 
-> **Sobre los resultados esperados:** están escritos a partir del código del proyecto. Si en tu máquina algo da distinto, es un dato útil: copiá la consola y lo revisamos.
+
 
 ---
 
