@@ -1,0 +1,8 @@
+# Perfil seguridad (cap. 20): usuario con permisos mínimos en el vhost "pedidos".
+# Primero corré scripts/seguridad.ps1 (PowerShell) o scripts/seguridad.sh (Git Bash).
+# Resultado esperado: ACCESS_REFUSED, porque la app declara colas y app_productor no tiene "configure".
+spring:
+  rabbitmq:
+    virtual-host: pedidos
+    username: app_productor
+    password: Cambiame-1

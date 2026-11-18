@@ -1,0 +1,5 @@
+# Perfil para el clúster del cap. 21:  --spring.profiles.active=cluster
+# (los 3 nodos del docker-compose escuchan en 5682, 5683 y 5684)
+spring:
+  rabbitmq:
+    addresses: localhost:5682,localhost:5683,localhost:5684   # reemplaza host y port

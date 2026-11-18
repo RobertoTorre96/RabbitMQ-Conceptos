@@ -1,0 +1,104 @@
+# UN SOLO COMPOSE PARA TODO:  docker compose up -d
+#
+#  Servicio     Para qué                              Puertos en tu máquina
+#  -----------  ------------------------------------  --------------------------------------------
+#  rabbit       broker de los caps. 1-20 y 22         5672 AMQP · 15672 panel · 15692 métricas · 5671 TLS
+#  postgres     base del outbox y la idempotencia     5432
+#  certs        genera los certificados TLS (una vez) -
+#  prometheus   cap. 22: métricas                     9090
+#  grafana      cap. 22: paneles                      3000 (admin / admin)
+#  rabbit1-3    cap. 21: clúster de 3 nodos           AMQP 5682-5684 · panel 15682-15684
+#
+# La app Spring NO está acá: la corrés desde IntelliJ (o mvn spring-boot:run).
+# Si tu máquina anda justa de memoria:  docker compose up -d rabbit postgres
+services:
+
+  # ---------- certificados TLS (cap. 20): corre una vez y termina ----------
+  certs:
+    image: alpine:3
+    volumes:
+      - ./docker/certs:/certs
+    command: ["sh", "/certs/generar-certs.sh"]
+
+  # ---------- broker principal (un nodo) ----------
+  rabbit:
+    image: rabbitmq:4-management
+    container_name: rabbit
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+    ports:
+      - "5672:5672"     # AMQP sin cifrar
+      - "5671:5671"     # AMQP con TLS (cap. 20)
+      - "15672:15672"   # panel web (guest / guest)
+      - "15692:15692"   # métricas Prometheus (cap. 22)
+    volumes:
+      - ./docker/tls/rabbitmq.conf:/etc/rabbitmq/conf.d/20-tls.conf:ro
+      - ./docker/certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------- PostgreSQL (caps. 13 y 16) ----------
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: estudio
+      POSTGRES_USER: estudio
+      POSTGRES_PASSWORD: estudio
+    ports:
+      - "5433:5432"     # DBeaver: localhost:5432, BD estudio, usuario estudio, clave estudio
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U estudio -d estudio"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---------- monitoreo (cap. 22) ----------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # para scrapear tu app corriendo en el host
+    ports:
+      - "9090:9090"
+    depends_on:
+      - rabbit
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./docker/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # ---------- clúster de 3 nodos (cap. 21), independiente del "rabbit" de arriba ----------
+  rabbit1: &nodo
+    image: rabbitmq:4-management
+    hostname: rabbit1
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "cookie-de-estudio"   # debe ser IGUAL en los 3 nodos
+    volumes:
+      - ./docker/cluster.conf:/etc/rabbitmq/conf.d/20-cluster.conf:ro
+    ports: ["5682:5672", "15682:15672"]
+  rabbit2:
+    <<: *nodo
+    hostname: rabbit2
+    ports: ["5683:5672", "15683:15672"]
+  rabbit3:
+    <<: *nodo
+    hostname: rabbit3
+    ports: ["5684:5672", "15684:15672"]
+
+volumes:
+  pgdata:

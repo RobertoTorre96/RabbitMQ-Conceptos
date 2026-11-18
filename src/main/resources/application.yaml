@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: springboot-rabbitmq-vol2
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    publisher-confirm-type: correlated   # cap. 6: confirms
+    publisher-returns: true              # cap. 6: returns
+    template:
+      mandatory: true
+      reply-timeout: 5s                  # cap. 12: RPC
+      observation-enabled: true          # cap. 22: métricas de cada publicación
+    listener:
+      simple:
+        acknowledge-mode: manual         # cap. B2: ACK manual por defecto
+        prefetch: 1                      # cap. 9
+        default-requeue-rejected: false  # cap. 15: seguro contra bucles infinitos
+        observation-enabled: true        # cap. 22: métricas de cada listener
+        retry:                           # cap. 7: solo afecta a listeners con ackMode = "AUTO"
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2s
+          multiplier: 2
+          max-interval: 10s
+
+  # cap. 13 y 16: PostgreSQL del docker-compose (los datos SOBREVIVEN al reiniciar la app)
+  datasource:
+    url: jdbc:postgresql://localhost:5433/estudio
+    username: estudio
+    password: estudio
+  sql:
+    init:
+      mode: always        # ejecuta schema.sql al arrancar (todo con IF NOT EXISTS)
+
+server:
+  port: 8080
+
+# cap. 22
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

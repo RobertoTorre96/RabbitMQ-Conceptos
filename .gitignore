@@ -1,0 +1,6 @@
+target/
+.idea/
+*.iml
+.vscode/
+docker/certs/*.pem
+docker/certs/*.key

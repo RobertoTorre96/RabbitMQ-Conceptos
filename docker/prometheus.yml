@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: rabbitmq              # broker principal (plugin rabbitmq_prometheus, puerto 15692)
+    static_configs:
+      - targets: ["rabbit:15692"]
+
+  - job_name: rabbitmq-cluster      # los 3 nodos del cap. 21
+    static_configs:
+      - targets: ["rabbit1:15692", "rabbit2:15692", "rabbit3:15692"]
+
+  - job_name: app                   # tu app Spring (Actuator + Micrometer), corriendo en tu máquina
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8080"]

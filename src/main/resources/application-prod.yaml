@@ -1,0 +1,18 @@
+# Ejemplo del cap. 20 (seguridad). No se usa salvo que actives el perfil "prod".
+# Necesitás un broker con TLS (ver rabbitmq.conf en el README) y el certificado en classpath:certs/ca.pem
+spring:
+  rabbitmq:
+    host: rabbit.miempresa.com
+    port: 5671                 # puerto TLS (5672 = sin cifrar)
+    virtual-host: pedidos
+    username: ${RABBIT_USER}   # variables de entorno: nunca en el repositorio
+    password: ${RABBIT_PASS}
+    ssl:
+      enabled: true
+      bundle: rabbit-tls
+  ssl:
+    bundle:
+      pem:
+        rabbit-tls:
+          truststore:
+            certificate: classpath:certs/ca.pem

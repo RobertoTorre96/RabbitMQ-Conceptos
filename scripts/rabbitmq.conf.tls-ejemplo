@@ -1,0 +1,8 @@
+# Cap. 20 - lado del broker (ejemplo, no se usa en el docker-compose de estudio)
+listeners.ssl.default = 5671
+ssl_options.cacertfile = /certs/ca.pem
+ssl_options.certfile = /certs/server.pem
+ssl_options.keyfile = /certs/server.key
+ssl_options.verify = verify_peer
+ssl_options.fail_if_no_peer_cert = false
+listeners.tcp = none   # opcional: apaga el puerto sin cifrar
